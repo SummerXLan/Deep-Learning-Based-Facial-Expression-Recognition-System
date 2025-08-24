@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 表情识别系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .error-message {
+            color: #d9534f;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+            display: none;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>创建账号</h1>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="/register" id="registerForm" onsubmit="return validateForm()">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required minlength="3" maxlength="20">
+                <div id="usernameError" class="error-message">用户名长度应为3-20个字符</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required minlength="6">
+                <div id="passwordError" class="error-message">密码长度至少为6个字符</div>
+            </div>
+            
+            {% if allow_admin_register %}
+            <div class="form-group">
+                <label><input type="checkbox" name="is_admin" value="1"> 注册为管理员</label>
+            </div>
+            {% endif %}
+            
+            <button type="submit" class="btn">注册</button>
+        </form>
+        
+        <div class="link">
+            已有账号？<a href="/login">立即登录</a>
+        </div>
+    </div>
+
+    <script>
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        async function validateForm() {
+            let isValid = true;
+            const username = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password');
+            const password = passwordInput.value;
+            const usernameError = document.getElementById('usernameError');
+            const passwordError = document.getElementById('passwordError');
+            usernameError.style.display = 'none';
+            passwordError.style.display = 'none';
+            if (username.length < 3 || username.length > 20) {
+                usernameError.style.display = 'block';
+                isValid = false;
+            }
+            if (password.length < 6) {
+                passwordError.style.display = 'block';
+                isValid = false;
+            }
+            if (isValid) {
+                // 前端哈希
+                passwordInput.value = await hashPassword(password);
+            }
+            return isValid;
+        }
+    </script>
+</body>
+</html>

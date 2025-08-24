@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 表情识别系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .error-message {
+            color: #d9534f;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+            display: none;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>欢迎登录</h1>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="/login" id="loginForm" onsubmit="return validateForm()">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required>
+                <div id="usernameError" class="error-message">请输入用户名</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+                <div id="passwordError" class="error-message">请输入密码</div>
+            </div>
+            
+            <button type="submit" class="btn">登录</button>
+        </form>
+        
+        <div class="link">
+            还没有账号？<a href="/register">立即注册</a>
+        </div>
+    </div>
+
+    <script>
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        async function validateForm() {
+            let isValid = true;
+            const username = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password');
+            const password = passwordInput.value;
+            const usernameError = document.getElementById('usernameError');
+            const passwordError = document.getElementById('passwordError');
+            usernameError.style.display = 'none';
+            passwordError.style.display = 'none';
+            if (username.trim() === '') {
+                usernameError.style.display = 'block';
+                isValid = false;
+            }
+            if (password.trim() === '') {
+                passwordError.style.display = 'block';
+                isValid = false;
+            }
+            if (isValid) {
+                // 前端哈希
+                passwordInput.value = await hashPassword(password);
+            }
+            return isValid;
+        }
+    </script>
+</body>
+</html>

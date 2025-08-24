@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传图片 - 表情识别系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/upload" class="navbar-brand">表情识别系统</a>
+        <div class="navbar-links">
+            <a href="/upload">上传图片</a>
+            <a href="/history">历史记录</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>上传图片进行表情识别</h1>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="upload-options" style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
+            <!-- 本地上传 -->
+            <div class="upload-card" style="flex: 1; min-width: 220px; max-width: 260px; background: #f9f9f9; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 1.5rem; margin-bottom: 1rem;">
+                <h3 style="color: #3498db; margin-bottom: 1rem;">本地上传</h3>
+                <form method="POST" enctype="multipart/form-data" action="/upload">
+                    <div class="form-group">
+                        <label for="file">选择包含人脸的图片</label>
+                        <input type="file" id="file" name="file" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn">开始识别</button>
+                </form>
+            </div>
+            <!-- 摄像头拍照上传 -->
+            <div class="upload-card" style="flex: 1; min-width: 220px; max-width: 260px; background: #f9f9f9; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 1.5rem; margin-bottom: 1rem;">
+                <h3 style="color: #3498db; margin-bottom: 1rem;">拍照上传</h3>
+                <div id="camera-area" style="display: flex; flex-direction: column; align-items: center;">
+                    <video id="video" width="200" height="150" autoplay style="border-radius: 8px; background: #222; display: none;"></video>
+                    <canvas id="canvas" width="200" height="150" style="display:none;"></canvas>
+                    <img id="photo-preview" style="display:none; width:200px; height:150px; border-radius:8px; margin-top:0.5rem; object-fit:cover;"/>
+                    <div style="margin-top: 0.5rem;">
+                        <button type="button" class="btn" id="start-camera">打开摄像头</button>
+                        <button type="button" class="btn" id="take-photo" style="display:none; background:#2ecc71;">拍照</button>
+                        <button type="button" class="btn" id="retake-photo" style="display:none; background:#f39c12;">重拍</button>
+                    </div>
+                    <form id="photo-form" method="POST" enctype="multipart/form-data" action="/upload" style="margin-top:0.5rem; display:none;">
+                        <input type="hidden" name="photo_data" id="photo_data">
+                        <button type="submit" class="btn" style="background:#e67e22;">上传照片</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // 摄像头拍照逻辑
+    const startCameraBtn = document.getElementById('start-camera');
+    const takePhotoBtn = document.getElementById('take-photo');
+    const retakePhotoBtn = document.getElementById('retake-photo');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photoPreview = document.getElementById('photo-preview');
+    const photoForm = document.getElementById('photo-form');
+    const photoDataInput = document.getElementById('photo_data');
+    let stream = null;
+
+    startCameraBtn.onclick = async function() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            video.style.display = 'block';
+            takePhotoBtn.style.display = 'inline-block';
+            startCameraBtn.style.display = 'none';
+            photoPreview.style.display = 'none';
+            retakePhotoBtn.style.display = 'none';
+            photoForm.style.display = 'none';
+        } else {
+            alert('当前浏览器不支持摄像头功能');
+        }
+    };
+
+    takePhotoBtn.onclick = function() {
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        photoPreview.src = dataUrl;
+        photoPreview.style.display = 'block';
+        photoDataInput.value = dataUrl;
+        photoForm.style.display = 'block';
+        retakePhotoBtn.style.display = 'inline-block';
+        video.style.display = 'none';
+        takePhotoBtn.style.display = 'none';
+        // 关闭摄像头
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+
+    retakePhotoBtn.onclick = function() {
+        photoPreview.style.display = 'none';
+        photoForm.style.display = 'none';
+        retakePhotoBtn.style.display = 'none';
+        startCameraBtn.style.display = 'inline-block';
+    };
+    </script>
+</body>
+</html>

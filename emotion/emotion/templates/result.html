@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>识别结果 - 表情识别系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/upload" class="navbar-brand">表情识别系统</a>
+        <div class="navbar-links">
+            <a href="/login">退出登录</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>表情识别结果</h1>
+        
+        <div class="result-container">
+            <img src="{{ output_image }}" alt="识别后的图片" class="result-image">
+        </div>
+        
+        <div class="action-buttons">
+            <a href="/upload" class="btn back-btn">识别新图片</a>
+        </div>
+    </div>
+</body>
+</html>

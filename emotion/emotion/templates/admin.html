@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - 用户管理</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+        .admin-table th, .admin-table td { border: 1px solid #ddd; padding: 0.6rem; text-align: center; }
+        .admin-table th { background: #f0f4f8; color: #3498db; }
+        .admin-table tr:nth-child(even) { background: #f9f9f9; }
+        .admin-actions button { margin: 0 0.2rem; }
+        .admin-form { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center; align-items: center; }
+        .admin-form label { font-weight: 500; display: flex; align-items: center; min-width: 110px; }
+        .admin-form label span { display: inline-block; width: 48px; text-align: right; margin-right: 6px; }
+        .admin-form input[type="text"], .admin-form input[type="password"] { padding: 0.5rem; border-radius: 5px; border: 1px solid #ccc; width: 180px; }
+        .container { max-width: 1000px; }
+        .admin-table input[type="text"] { width: 200px; }
+        .admin-table input[type="password"] { width: 150px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/admin" class="navbar-brand">后台管理</a>
+        <div class="navbar-links">
+            <a href="/upload">返回前台</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>用户管理</h1>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <!-- 新增用户表单 -->
+        <form class="admin-form" method="POST" action="/admin/add_user">
+            <label><span>用户名</span><input type="text" name="username" required></label>
+            <label><span>密码</span><input type="password" name="password" required></label>
+            <label style="min-width:70px;"><input type="checkbox" name="is_admin" value="1"> 管理员</label>
+            <button type="submit" class="btn">新增用户</button>
+        </form>
+        <!-- 用户列表 -->
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户名</th>
+                    <th>管理员</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <form method="POST" action="/admin/edit_user/{{ user.id }}">
+                        <td>{{ user.id }}</td>
+                        <td><input type="text" name="username" value="{{ user.username }}" required style="width:90px;"></td>
+                        <td>
+                            <input type="checkbox" name="is_admin" value="1" {% if user.is_admin %}checked{% endif %}>
+                        </td>
+                        <td class="admin-actions">
+                            <input type="password" name="password" placeholder="新密码" class="admin-password-input">
+                            <button type="submit" class="btn" style="background:#2ecc71;">保存</button>
+                    </form>
+                    <form method="POST" action="/admin/delete_user/{{ user.id }}" style="display:inline;">
+                        <button type="submit" class="btn" style="background:#e74c3c;" onclick="return confirm('确定要删除该用户吗？');">删除</button>
+                    </form>
+                        </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        // 新增用户表单
+        document.querySelector('.admin-form').addEventListener('submit', async function(e) {
+            const pwdInput = this.querySelector('input[type="password"]');
+            if (pwdInput && pwdInput.value) {
+                pwdInput.value = await hashPassword(pwdInput.value);
+            }
+        });
+        // 编辑用户表单
+        document.querySelectorAll('form[action^="/admin/edit_user/"]').forEach(function(form) {
+            form.addEventListener('submit', async function(e) {
+                const pwdInput = this.querySelector('input[type="password"]');
+                if (pwdInput && pwdInput.value) {
+                    pwdInput.value = await hashPassword(pwdInput.value);
+                }
+            });
+        });
+        // 自动隐藏flash消息
+        window.onload = function() {
+            var flash = document.querySelector('.flash-message');
+            if(flash){
+                setTimeout(function(){
+                    flash.style.transition = 'opacity 0.5s';
+                    flash.style.opacity = 0;
+                    setTimeout(function(){ flash.style.display = 'none'; }, 500);
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html> 
